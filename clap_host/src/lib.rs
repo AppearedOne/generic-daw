@@ -8,7 +8,7 @@ use std::{
 	sync::{Arc, LazyLock},
 };
 use utils::{NoDebug, unique_id};
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
 mod audio_buffers;
 mod audio_ports_config;
@@ -104,17 +104,20 @@ pub fn get_installed_plugins(
 				dir_entry.file_type().is_file()
 			}
 		})
-		.filter(|dir_entry| {
-			dir_entry
-				.path()
-				.extension()
-				.is_some_and(|ext| ext == "clap")
+		.map(DirEntry::into_path)
+		.filter(|path| path.extension().is_some_and(|ext| ext == "clap"))
+		.filter_map(|path| {
+			if cfg!(target_os = "macos") {
+				Some(path.join("Contents/MacOS").join(path.file_stem()?))
+			} else {
+				Some(path)
+			}
 		})
-		.filter_map(|dir_entry| {
+		.filter_map(|path| {
 			// SAFETY:
 			// Loading an external library object file is inherently unsafe.
-			unsafe { PluginBundle::load(dir_entry.path()) }
-				.inspect_err(|err| warn!("{}: {err}", dir_entry.path().display()))
+			unsafe { PluginBundle::load(&path) }
+				.inspect_err(|err| warn!("{}: {err}", &path.display()))
 				.ok()
 		})
 		.for_each(|bundle| {

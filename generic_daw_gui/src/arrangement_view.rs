@@ -33,16 +33,10 @@ use generic_daw_widget::{
 	peak_meter::{MAX_VOL, PeakMeter},
 };
 use iced::{
-	Center, Element, Fill, Point, Shrink, Subscription, Task, Vector, border,
-	futures::SinkExt as _,
-	mouse::Interaction,
-	padding, stream,
-	time::every,
-	widget::{
+	Border, Center, Element, Fill, Padding, Point, Shrink, Subscription, Task, Vector, advanced::Widget, border, futures::SinkExt as _, mouse::Interaction, padding, stream, time::every, widget::{
 		button, column, combo_box, container, mouse_area, opaque, row, rule, scrollable, slider,
-		space, text, vertical_slider,
-	},
-	window,
+		space, text, text_input, vertical_slider,
+	}, window
 };
 use iced_split::{Split, Strategy};
 use log::warn;
@@ -1345,13 +1339,13 @@ impl ArrangementView {
 						)
 						.chain(once(
 							button(plus().size(LINE_HEIGHT + 6.0))
-								.padding(5)
+								.padding(2)
 								.style(button_with_radius(button::primary, f32::INFINITY))
 								.on_press(Message::ChannelAdd)
 								.into(),
 						)))
 					.align_y(Center)
-					.spacing(5),
+					.spacing(3),
 				)
 				.direction(scrollable::Direction::Horizontal(
 					scrollable::Scrollbar::default(),
@@ -1482,7 +1476,113 @@ impl ArrangementView {
 		mouse_area(
 			container(
 				column![
-					text(name).size(14).line_height(1.0),
+					container(text(name).size(14).line_height(1.0))
+						.width(Fill)
+						.align_x(Center)
+						.padding(3)
+						.style(|t| {
+							if self.selected_channel == node.id {
+								container::secondary(t).border(Border::default().width(0).rounded(0.0))
+							} else {
+								let mut def = container::bordered_box(t);
+                def.border.radius = 0.0.into();
+                def
+							}
+						}),
+					container(column![
+						combo_box(&self.plugins, "Inserts", None, move |descriptor| {
+							Message::PluginLoad(node.id, descriptor, true)
+						})
+						.menu_style(menu_style)
+						.width(Fill)
+						.size(12),
+						sweeten::column(
+							node.plugins
+								.iter()
+								.enumerate()
+								.map(|(i, plugin)| {
+									let button_style = |cond: bool| {
+										if !plugin.enabled || !node.enabled {
+											button::secondary
+										} else if cond {
+											button::warning
+										} else {
+											button::primary
+										}
+									};
+
+									row![
+										button(
+											text(&*plugin.descriptor.name)
+												.wrapping(text::Wrapping::None)
+												.ellipsis(text::Ellipsis::End)
+										)
+										.padding(2)
+										.style(button_with_radius(
+											button_style(false),
+											border::left(0)
+										))
+										.width(Fill)
+										.on_press(Message::ClapHost(
+											clap_host::Message::GuiOpen(plugin.id)
+										)),
+										column![
+											icon_button(
+												if plugin.enabled && !node.bypassed {
+													power()
+												} else {
+													power_off()
+												},
+												button_style(node.bypassed)
+											)
+											.on_press(Message::PluginToggleEnabled(
+												node.id,
+												i
+											)),
+											icon_button(
+												x(),
+												if plugin.enabled && node.enabled {
+													button::danger
+												} else {
+													button::secondary
+												}
+											)
+											.on_press(Message::PluginRemove(
+												node.id,
+												i
+											)),
+										]
+										.spacing(5),
+									]
+									.align_y(Center)
+									.spacing(5)
+								})
+								.map(|widget| {
+									row![
+										opaque(widget),
+										mouse_area(
+											container(grip_vertical())
+												.center_y(LINE_HEIGHT + 14.0)
+												.style(bordered_box_with_radius(border::right(5)))
+										)
+										.interaction(Interaction::Grab),
+									]
+									.align_y(Center)
+									.spacing(5)
+									.into()
+								})
+						)
+						.spacing(5)
+						.on_drag(|drag_node| Message::PluginMoveTo(node.id, drag_node))
+						.style(sweeten_column_style),
+					])
+					.style(|t| {
+						container::Style::default().background(iced::Background::Color(
+							t.extended_palette().background.base.color,
+						))
+					})
+					.height(Fill)
+					.align_top(Fill),
 					node.pan_knob(23.0),
 					row![
 						text_icon_button("M", button_style(false))
@@ -1536,12 +1636,10 @@ impl ArrangementView {
 						))
 					]
 					.spacing(5),
-					container(text(format_decibels(node.volume.abs())).line_height(1.0))
-						.style(bordered_box_with_radius(0))
-						.center_x(55)
-						.padding(2),
 					row![
 						container(PeakMeter::new(&node.peaks[0]).width(16.0))
+							.padding(padding::vertical(10)),
+						container(PeakMeter::new(&node.peaks[1]).width(16.0))
 							.padding(padding::vertical(10)),
 						vertical_slider(0.0..=MAX_VOL, node.volume.abs().cbrt(), |v| {
 							Message::ChannelVolumeChanged(node.id, v.powi(3).copysign(node.volume))
@@ -1558,11 +1656,14 @@ impl ArrangementView {
 							},
 							5
 						)),
-						container(PeakMeter::new(&node.peaks[1]).width(16.0))
-							.padding(padding::vertical(10)),
 					]
-					.spacing(3),
-					if node.ty == NodeType::Track
+					.spacing(5)
+					.padding(5),
+					container(text(format_decibels(node.volume.abs())).line_height(1.0))
+						.style(bordered_box_with_radius(0))
+						.width(Fill)
+						.align_x(Center),
+					/*if node.ty == NodeType::Track
 						|| node.id == self.selected_channel
 						|| self.arrangement.master().id == self.selected_channel
 					{
@@ -1589,23 +1690,16 @@ impl ArrangementView {
 								Message::Connect(self.selected_channel, node.id, 1.0)
 							})
 							.into()
-					}
+					}*/
 				]
-				.width(Shrink)
+				.width(Fill)
 				.spacing(5)
+				.padding(0)
 				.align_x(Center),
 			)
-			.padding(5)
-			.style(|t| {
-				if self.selected_channel == node.id {
-					container::background(t.extended_palette().background.weakest.color)
-						.border(border::width(1.5).color(t.extended_palette().primary.base.color))
-				} else {
-					container::background(t.extended_palette().background.weakest.color).border(
-						border::width(1).color(t.extended_palette().background.strong.color),
-					)
-				}
-			}),
+			.padding(Padding::new(0.0).vertical(5))
+			.width(Fill)
+			.style(|t| container::background(t.extended_palette().background.weakest.color)),
 		)
 		.interaction(Interaction::Pointer)
 		.on_press(Message::ChannelSelect(node.id))

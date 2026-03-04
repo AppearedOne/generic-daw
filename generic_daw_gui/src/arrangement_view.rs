@@ -33,10 +33,18 @@ use generic_daw_widget::{
 	peak_meter::{MAX_VOL, PeakMeter},
 };
 use iced::{
-	Border, Center, Element, Fill, Padding, Point, Shrink, Subscription, Task, Vector, advanced::Widget, border, futures::SinkExt as _, mouse::Interaction, padding, stream, time::every, widget::{
+	Border, Center, Element, Fill, Padding, Point, Shrink, Subscription, Task, Vector,
+	advanced::Widget,
+	border,
+	futures::SinkExt as _,
+	mouse::Interaction,
+	padding, stream,
+	time::every,
+	widget::{
 		button, column, combo_box, container, mouse_area, opaque, row, rule, scrollable, slider,
 		space, text, text_input, vertical_slider,
-	}, window
+	},
+	window,
 };
 use iced_split::{Split, Strategy};
 use log::warn;
@@ -1477,16 +1485,13 @@ impl ArrangementView {
 			container(
 				column![
 					container(text(name).size(14).line_height(1.0))
-						.width(Fill)
-						.align_x(Center)
-						.padding(3)
+						.center_x(Fill).padding(3)
 						.style(|t| {
 							if self.selected_channel == node.id {
-								container::secondary(t).border(Border::default().width(0).rounded(0.0))
+								container::secondary(t)
+									.border(Border::default().width(0).rounded(0.0))
 							} else {
-								let mut def = container::bordered_box(t);
-                def.border.radius = 0.0.into();
-                def
+								bordered_box_with_radius(0.0)(t)
 							}
 						}),
 					container(column![
@@ -1535,10 +1540,7 @@ impl ArrangementView {
 												},
 												button_style(node.bypassed)
 											)
-											.on_press(Message::PluginToggleEnabled(
-												node.id,
-												i
-											)),
+											.on_press(Message::PluginToggleEnabled(node.id, i)),
 											icon_button(
 												x(),
 												if plugin.enabled && node.enabled {
@@ -1547,10 +1549,7 @@ impl ArrangementView {
 													button::secondary
 												}
 											)
-											.on_press(Message::PluginRemove(
-												node.id,
-												i
-											)),
+											.on_press(Message::PluginRemove(node.id, i)),
 										]
 										.spacing(5),
 									]
@@ -1657,12 +1656,10 @@ impl ArrangementView {
 							5
 						)),
 					]
-					.spacing(5)
-					.padding(5),
+					.spacing(6),
 					container(text(format_decibels(node.volume.abs())).line_height(1.0))
 						.style(bordered_box_with_radius(0))
-						.width(Fill)
-						.align_x(Center),
+						.center_x(Fill),
 					/*if node.ty == NodeType::Track
 						|| node.id == self.selected_channel
 						|| self.arrangement.master().id == self.selected_channel
@@ -1694,7 +1691,6 @@ impl ArrangementView {
 				]
 				.width(Fill)
 				.spacing(5)
-				.padding(0)
 				.align_x(Center),
 			)
 			.padding(Padding::new(0.0).vertical(5))

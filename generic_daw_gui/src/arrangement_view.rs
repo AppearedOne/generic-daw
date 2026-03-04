@@ -1704,7 +1704,6 @@ impl ArrangementView {
 				]
 				.width(Fill)
 				.spacing(5)
-				.padding(0)
 				.align_x(Center),
 			)
 			.padding(Padding::new(0.0).vertical(5))

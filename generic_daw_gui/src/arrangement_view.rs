@@ -210,7 +210,6 @@ pub struct ArrangementView {
 
 	split_at: f32,
 	plugins: combo_box::State<PluginDescriptor>,
-  channels: combo_box::State<NodeId>,
 
 	clips_loading: usize,
 	scan: Option<Scan>,
@@ -254,7 +253,6 @@ impl ArrangementView {
 
 				split_at: state.plugins_panel_split_at,
 				plugins: combo_box::State::default(),
-        channels: combo_box::State::default(),
 
 				clips_loading: 0,
 				scan: None,
@@ -1589,10 +1587,10 @@ impl ArrangementView {
 					.width(80)
 					.align_top(Fill),
 					container(column![
-						combo_box(&self.arrangement.channels(), "Routing", None, |channel| Message::Connect(node.id, channel , ()))
+						/*combo_box(&self.arrangement.channels(), "Routing", None, |channel| Message::Connect(node.id, channel , ()))
 						.menu_style(menu_style)
 						.width(Fill)
-						.size(12)
+						.size(12)*/
 					])
 					.height(Fill)
 					.width(80)
@@ -1706,6 +1704,7 @@ impl ArrangementView {
 				]
 				.width(Fill)
 				.spacing(5)
+				.padding(0)
 				.align_x(Center),
 			)
 			.padding(Padding::new(0.0).vertical(5))

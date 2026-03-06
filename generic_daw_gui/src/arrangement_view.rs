@@ -37,7 +37,7 @@ use iced::{
 	advanced::Widget,
 	border,
 	futures::SinkExt as _,
-	keyboard,
+  keyboard,
 	mouse::Interaction,
 	padding, stream,
 	time::every,
@@ -210,6 +210,7 @@ pub struct ArrangementView {
 
 	split_at: f32,
 	plugins: combo_box::State<PluginDescriptor>,
+  //channels: combo_box::State<NodeId>,
 
 	clips_loading: usize,
 	scan: Option<Scan>,
@@ -1333,8 +1334,7 @@ impl ArrangementView {
 								.tracks()
 								.iter()
 								.map(|track| self.arrangement.node(track.id))
-								.enumerate()
-								.map(|(i, node)| self.channel(node, format!("T{}", i + 1)))
+								.map(|node| self.channel(node, format!("T{}", node.name)))
 								.peekable();
 
 							let one = iter.peek().map(|_| rule::vertical(1).into());
@@ -1343,8 +1343,7 @@ impl ArrangementView {
 						.chain(
 							self.arrangement
 								.channels()
-								.enumerate()
-								.map(|(i, node)| self.channel(node, format!("C{}", i + 1))),
+								.map(|node| self.channel(node, format!("C{}", node.name))),
 						)
 						.chain(once(
 							button(plus().size(LINE_HEIGHT + 6.0))

@@ -3,7 +3,7 @@ use crate::{
 		self,
 		clip::Clip,
 		midi_pattern::{MidiPattern, MidiPatternPair},
-		node::{Node, NodeType},
+		node::{Node, NodeType, TrackName},
 		plugin::Plugin,
 		poll_consumer,
 		sample::{Sample, SamplePair},
@@ -23,7 +23,7 @@ use iced::Task;
 use project::Id as Project;
 use rtrb::{Producer, PushError};
 use smol::unblock;
-use std::{collections::BTreeMap, num::NonZero, path::Path, sync::Arc};
+use std::{collections::{BTreeMap, HashSet}, num::NonZero, path::Path, sync::Arc};
 use utils::{NoDebug, ShiftMoveExt as _, unique_id};
 
 unique_id!(project);
@@ -62,7 +62,7 @@ impl Arrangement {
 		let mut nodes = BTreeMap::new();
 		nodes.insert(
 			master_node_id,
-			(Node::new(NodeType::Master, master_node_id), BTreeMap::new()),
+			(Node::new(NodeType::Master, master_node_id, TrackName::from_str("Master")), BTreeMap::new()),
 		);
 
 		let project = Project::unique();
@@ -337,7 +337,16 @@ impl Arrangement {
 
 	fn add(&mut self, node: impl Into<generic_daw_core::Node> + NodeImpl, ty: NodeType) -> NodeId {
 		let id = node.id();
-		self.nodes.insert(id, (Node::new(ty, id), BTreeMap::new()));
+    let taken_idx: HashSet<usize> = self.nodes.iter()
+    .filter_map(|t| match t.1.0.name {
+        TrackName::Index(i) => Some(i),
+        TrackName::Custom(_) => None,
+    })
+    .collect();
+    let idx = (0..)
+    .find(|i| !taken_idx.contains(i))
+    .unwrap();
+		self.nodes.insert(id, (Node::new(ty, id, TrackName::Index(idx)), BTreeMap::new()));
 		self.send(Message::NodeAdd(Box::new(node.into())));
 		id
 	}

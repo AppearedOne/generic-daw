@@ -5,7 +5,7 @@ use iced::{
 	Element, Fill,
 	widget::{container, row},
 };
-use std::{cmp::Ordering, time::Instant};
+use std::{cmp::Ordering, time::Instant, fmt};
 use utils::NoDebug;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -13,6 +13,30 @@ pub enum NodeType {
 	Master,
 	Channel,
 	Track,
+}
+
+#[derive(Debug)]
+pub enum TrackName {
+    Index(usize),
+    Custom(String),
+}
+
+impl fmt::Display for TrackName {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Index(idx) => write!(formatter, "Track {idx}"),
+            Self::Custom(name) => formatter.write_str(&name),
+        }
+    }
+}
+
+impl TrackName {
+    pub fn from_str(name: &str) -> Self {
+        TrackName::Custom(String::from(name))
+    }
+    pub fn from_idx(idx: usize) -> Self {
+        TrackName::Index(idx)
+    }
 }
 
 #[derive(Debug)]
@@ -25,10 +49,11 @@ pub struct Node {
 	pub enabled: bool,
 	pub bypassed: bool,
 	pub peaks: NoDebug<[peak_meter::State; 2]>,
+  pub name: TrackName,
 }
 
 impl Node {
-	pub fn new(ty: NodeType, id: NodeId) -> Self {
+	pub fn new(ty: NodeType, id: NodeId, name: TrackName) -> Self {
 		Self {
 			ty,
 			id,
@@ -38,6 +63,7 @@ impl Node {
 			enabled: true,
 			bypassed: false,
 			peaks: [peak_meter::State::default(), peak_meter::State::default()].into(),
+      name,
 		}
 	}
 

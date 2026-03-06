@@ -1334,7 +1334,7 @@ impl ArrangementView {
 								.tracks()
 								.iter()
 								.map(|track| self.arrangement.node(track.id))
-								.map(|node| self.channel(node, format!("T{}", node.name)))
+								.map(|node| self.channel(node, format!("{}", node.name)))
 								.peekable();
 
 							let one = iter.peek().map(|_| rule::vertical(1).into());
@@ -1343,7 +1343,7 @@ impl ArrangementView {
 						.chain(
 							self.arrangement
 								.channels()
-								.map(|node| self.channel(node, format!("C{}", node.name))),
+								.map(|node| self.channel(node, format!("{}", node.name))),
 						)
 						.chain(once(
 							button(plus().size(LINE_HEIGHT + 6.0))
